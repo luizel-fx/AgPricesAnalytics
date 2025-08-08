@@ -1,3 +1,4 @@
 plotly
 pandas
 git+https://github.com/batprem/price-loaders.git@fix/default-return-data-to-numerical
+websocket
