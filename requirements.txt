@@ -1,5 +1,17 @@
-plotly
-pandas
+# Biblioteca instalada diretamente do GitHub
 git+https://github.com/batprem/price-loaders.git@fix/default-return-data-to-numerical
+
+# WebSocket
 websocket-client
-websockets
+
+# HTTP requests
+requests
+
+# Dataframes e manipulação numérica
+pandas
+numpy
+
+# Datas e fusos horários
+pytz
+
+plotly
