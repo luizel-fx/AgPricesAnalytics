@@ -15,3 +15,5 @@ numpy
 pytz
 
 plotly
+
+openpyxl
