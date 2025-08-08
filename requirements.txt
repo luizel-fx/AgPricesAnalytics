@@ -1,0 +1,3 @@
+plotly
+pandas
+git+git://github.com/batprem/price-loaders.git@fix/default-return-data-to-numerical
