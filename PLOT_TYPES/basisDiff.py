@@ -11,35 +11,41 @@ def basisDiffSidebar(commodity):
         lookback = 0
         fstBase = ''
         scdBase = ''
-        if commodity == "Corn":
+        if commodity == "Milho":
             path = "DATA/milho.xlsx"
             bases = pd.read_excel("DATA/milho.xlsx", sheet_name="PRAÇAS")['Descrição']
-        else:
+        elif commodity == "Soja":
             path = "DATA/soja.xlsx"
             bases = pd.read_excel("DATA/soja.xlsx", sheet_name="PRAÇAS")['Descrição']
+        elif commodity == "Boi Gordo":
+            path = "DATA/boi.xlsx"
+            bases = pd.read_excel(path, sheet_name="PRAÇAS")['Descrição']
 
         fstBase = st.selectbox(
-            "First base",
+            "Primeira praça",
             bases
         )
 
         scdBase = st.selectbox(
-            "Second base",
+            "Segunda praça",
             bases
         )
 
-        lookback = st.number_input("Lookback", step = 1)
+        lookback = st.number_input("Histórico", step = 1)
 
     return fstBase, scdBase, lookback
 
 def basisDiffPlot(commodity, fstBase, scdBase, lookback):
     fig = go.Figure()
 
-    if commodity == "Corn":
+    if commodity == "Milho":
         path = "DATA/milho.xlsx"
         bases = pd.read_excel(path, sheet_name="PRAÇAS")
-    else:
+    elif commodity == "Soja":
         path = "DATA/soja.xlsx"
+        bases = pd.read_excel(path, sheet_name="PRAÇAS")
+    elif commodity == "Boi Gordo":
+        path = "DATA/boi.xlsx"
         bases = pd.read_excel(path, sheet_name="PRAÇAS")
     
     fstBaseCode = bases[bases['Descrição'] == fstBase]['Praças'].values[0]
@@ -72,24 +78,11 @@ def basisDiffPlot(commodity, fstBase, scdBase, lookback):
         columns = 'year'
         )
 
-    pastYears = mergedPricesPivoted.columns[:-1]
+    pastYears = mergedPricesPivoted.columns[:-2]
     mergedPricesPivoted = mergedPricesPivoted.bfill()
 
     mergedPricesPivoted['mean'] =  mergedPricesPivoted[pastYears].mean(axis = 1)
 
-    for y in pastYears:
-        fig.add_trace(go.Scatter(x=mergedPricesPivoted.index, y=mergedPricesPivoted[y], name=f'{y}',line=dict(width=1)))
-    
-    fig.add_trace(
-        go.Scatter(
-            x=mergedPricesPivoted.index,
-            y=mergedPricesPivoted[currYear],
-            name=f'{currYear}',
-            line=dict(
-                width=3,
-                )
-            )
-        )
     fig.add_trace(
         go.Scatter(
             x=mergedPricesPivoted.index,
@@ -102,6 +95,34 @@ def basisDiffPlot(commodity, fstBase, scdBase, lookback):
                 )
             )
         )
+
+    fig.add_trace(
+        go.Scatter(
+            x=mergedPricesPivoted.index,
+            y=mergedPricesPivoted[currYear],
+            name=f'{currYear}',
+            line=dict(
+                width=3,
+                color = "#610FF5"
+                )
+            )
+        )
+    fig.add_trace(
+        go.Scatter(
+            x=mergedPricesPivoted.index,
+            y=mergedPricesPivoted[currYear-1],
+            name=f'{currYear-1}',
+            line=dict(
+                width=3,
+                color = "#A60000"
+                )
+            )
+        )
+
+    for y in pastYears.sort_values(ascending=False):
+        fig.add_trace(go.Scatter(x=mergedPricesPivoted.index, y=mergedPricesPivoted[y], name=f'{y}',line=dict(width=3, color = "rgba(125, 125, 125, 0.25)")))
+    
+    
     
     st.plotly_chart(fig, theme = 'streamlit')
     
