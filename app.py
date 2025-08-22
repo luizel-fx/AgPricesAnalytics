@@ -12,14 +12,16 @@ run_button = False
 st.set_page_config(page_title="AgriVisor", page_icon=':corn:', layout='wide')
 
 with st.sidebar:
-    st.markdown(
-f"""
-    <div style="display: flex; justify-content: center;">
-        <img src="https://chatgpt.com/backend-api/public_content/enc/eyJpZCI6Im1fNjhhNWUwMThmMGE0ODE5MTg3OWI2Y2VjMTQ2MWZiYmQ6ZmlsZV8wMDAwMDAwMDFjN2M2MWY0YjEwOGJjOTlkYmYzYjEwNCIsInRzIjoiNDg3Njk0IiwicCI6InB5aSIsInNpZyI6ImMyZDY0NTBhZGE2OTM0MWY3ZmU5NWRiNzliZjA1ZDcxOGUzOTRhYWNiZDU2NmE0MTg4YjBjNjgwMmViY2RkZmYiLCJ2IjoiMCIsImdpem1vX2lkIjpudWxsfQ=="; width="150">
-    </div>
-""", unsafe_allow_html=True)
-
-        #st.image("IMAGES/logo.png", width=250)
+#    st.markdown(
+#f"""
+#    <div style="display: flex; justify-content: center;">
+#        <img src="IMAGES"; width="150">
+#    </div>
+#""", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([0.5,1.5,1]) # O segundo número é maior para que a coluna do meio seja mais larga
+    with col2:
+        st.image("IMAGES/logo2.png", width=150)
 
     plotType = st.selectbox(
         "Plot type",
@@ -42,7 +44,7 @@ f"""
             "Soja",
             "Boi Gordo"
         ],
-        index = None)
+        index = 0)
     elif plotType=="Calendar Spreads" or plotType == None:
         pass
     else:

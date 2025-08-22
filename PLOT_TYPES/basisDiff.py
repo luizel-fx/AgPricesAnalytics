@@ -2,7 +2,10 @@ import pandas as pd
 import numpy as np
 from price_loaders.tradingview import load_asset_price
 import streamlit as st
+from datetime import date, datetime
 
+
+import plotly.figure_factory as ff
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -36,7 +39,7 @@ def basisDiffSidebar(commodity):
     return fstBase, scdBase, lookback
 
 def basisDiffPlot(commodity, fstBase, scdBase, lookback):
-    fig = go.Figure()
+    linePlot = go.Figure()
 
     if commodity == "Milho":
         path = "DATA/milho.xlsx"
@@ -69,6 +72,11 @@ def basisDiffPlot(commodity, fstBase, scdBase, lookback):
     del bases
 
     mergedPrices['year'] = mergedPrices['DRF'].dt.year
+
+    mergedPrices['boxplot_flag'] = np.where(
+        mergedPrices['year'] == currYear, currYear, "Histórico"
+    )
+
     mergedPrices['forcedData'] = mergedPrices['DRF'].apply(lambda x: pd.Timestamp(currYear, x.month, x.day))
 
     mergedPricesPivoted = pd.pivot_table(
@@ -83,47 +91,98 @@ def basisDiffPlot(commodity, fstBase, scdBase, lookback):
 
     mergedPricesPivoted['mean'] =  mergedPricesPivoted[pastYears].mean(axis = 1)
 
-    fig.add_trace(
+    # The following code generates a line plot with stacked years and the seasonal average
+    
+    linePlot.add_trace(
         go.Scatter(
             x=mergedPricesPivoted.index,
             y=mergedPricesPivoted['mean'],
-            name=f'Mean ({lookback} years)',
+            name=f'Média ({lookback} years)',
             line=dict(
-                width=3,
+                width=5,
                 dash = 'dash',
                 color = "#000000"
                 )
             )
         )
 
-    fig.add_trace(
+    linePlot.add_trace(
         go.Scatter(
             x=mergedPricesPivoted.index,
             y=mergedPricesPivoted[currYear],
             name=f'{currYear}',
             line=dict(
                 width=3,
-                color = "#610FF5"
+                color = "#0031FF"
                 )
             )
         )
-    fig.add_trace(
+    linePlot.add_trace(
         go.Scatter(
             x=mergedPricesPivoted.index,
             y=mergedPricesPivoted[currYear-1],
             name=f'{currYear-1}',
             line=dict(
                 width=3,
-                color = "#A60000"
+                color = "#CC0000"
                 )
             )
         )
 
     for y in pastYears.sort_values(ascending=False):
-        fig.add_trace(go.Scatter(x=mergedPricesPivoted.index, y=mergedPricesPivoted[y], name=f'{y}',line=dict(width=3, color = "rgba(125, 125, 125, 0.25)")))
+        linePlot.add_trace(go.Scatter(x=mergedPricesPivoted.index, y=mergedPricesPivoted[y], name=f'{y}',line=dict(width=3, color = "rgba(125, 125, 125, 0.25)")))
     
-    
-    
-    st.plotly_chart(fig, theme = 'streamlit')
+    linePlot.update_layout(
+        legend = dict(
+            orientation = "h",
+            yanchor = "middle",
+            y = 1.02,
+            xanchor = "left",
+            x = 0.01
+        )
+    )
+
+    # Creating the displot
+    mergedPrices['month'] = [date(datetime.now().year, m, 1) for m in mergedPrices['DRF'].dt.month]
+
+
+    df_cleaned = mergedPrices.replace([np.inf, -np.inf], np.nan)
+    df_cleaned = df_cleaned.dropna()
+
+    disPlot = ff.create_distplot(
+        [df_cleaned['diff'], df_cleaned[df_cleaned['month'] == date(datetime.now().year, max(df_cleaned['DRF'].dt.month), 1)]['diff']],
+        group_labels=["Ano interno", "Mês atual"],
+        show_rug=False,
+        show_hist=False
+    )
+
+    disPlot.update_layout(
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0.01
+        )
+    )
+
+    # =========== #
+    # = Boxplot = #
+    # =========== #
+    boxplot = px.box(mergedPrices, y = 'diff', x='month', color = 'boxplot_flag')
+
+    # ================================================= # 
+    # = Ploting the generated graphs on the dashboard = #
+    # ================================================= #
+
+    fstRowCol1, fstRowCol2 = st.columns([2,1])
+
+    with fstRowCol1: st.plotly_chart(linePlot, theme = 'streamlit') # Plot the lineplot in the dashboard
+    with fstRowCol2: st.plotly_chart(disPlot,  theme = 'streamlit') # 
+
+    scdRowCol1, scdRowCol2 = st.columns([2,1])
+
+    with scdRowCol1: st.plotly_chart(boxplot, theme = 'streamlit')
+
     
     
