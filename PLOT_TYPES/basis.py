@@ -111,7 +111,7 @@ def basisSidebar(commodity):
                 else:
                     expYear = None
 
-        lookback = st.number_input("Lookback", step = 1)
+            lookback = st.number_input("Lookback", step = 1)
 
     return base, futName, convertUnit, expMonth, expYear, convertFactor, lookback
 
@@ -161,13 +161,16 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
             yearlySelection = basis[basis['DRF'].dt.year == currYear - i]
             try: yearlySelection = yearlySelection[~((yearlySelection['DRF'].dt.month == 2) & (yearlySelection['DRF'].dt.day == 29))]
             except: pass
+            
             yearlySelection['DRF'] = yearlySelection['DRF'].apply(lambda x: pd.Timestamp(x.year+i, x.month, x.day))
             yearlySelection['spot_logreturns'] = np.log(yearlySelection['FEC']/yearlySelection['FEC'].shift(1))
             yearlySelection['fut_logreturns'] = np.log(yearlySelection['close']/yearlySelection['close'].shift(1))
             if i != 0:
                 stacked_TS.add_trace(go.Scatter(x=yearlySelection['DRF'], y=yearlySelection['basis'], name=f'{currYear - i}',line=dict(width=1)))
+                yearlySelection['year'] = 'Histórico'
             else: 
                 stacked_TS.add_trace(go.Scatter(x=yearlySelection['DRF'], y=yearlySelection['basis'], name=f'{currYear - i}',line=dict(width=3)))
+                yearlySelection['year'] = basis['DRF'].dt.year
             
             # This logic also needs to be fixed. The '1!' case was not adding to concatedBasis.
             concatedBasis = pd.concat([concatedBasis, yearlySelection], ignore_index=True)
@@ -250,7 +253,8 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
             px.box(
                 concatedBasis,
                 y = 'basis',
-                x = 'month'
+                x = 'month',
+                color='year'
             )
         )
     with scdRowCol2:
