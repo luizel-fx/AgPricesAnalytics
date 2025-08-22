@@ -86,6 +86,7 @@ def basisSidebar(commodity):
                     expYear = st.number_input("Ano de vencimento", step = 1)
                 else:
                     expYear = None
+            lookback = st.number_input("Lookback", step = 1)
 
         elif commodity=="Boi Gordo":
             bases = pd.read_excel("DATA/boi.xlsx", sheet_name="PRAÇAS")['Descrição']
