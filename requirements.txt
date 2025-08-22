@@ -10,6 +10,7 @@ requests
 # Dataframes e manipulação numérica
 pandas
 numpy
+scipy
 
 # Datas e fusos horários
 pytz
