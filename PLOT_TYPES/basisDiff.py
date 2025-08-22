@@ -74,7 +74,7 @@ def basisDiffPlot(commodity, fstBase, scdBase, lookback):
     mergedPrices['year'] = mergedPrices['DRF'].dt.year
 
     mergedPrices['boxplot_flag'] = np.where(
-        mergedPrices['year'] == currYear, currYear, "Histórico"
+        mergedPrices['year'] == currYear, str(currYear), "Histórico"
     )
 
     mergedPrices['forcedData'] = mergedPrices['DRF'].apply(lambda x: pd.Timestamp(currYear, x.month, x.day))
