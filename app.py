@@ -9,7 +9,7 @@ from PLOT_TYPES.calendarSpreads import calendarSpreadSidebar, calendarSpreadPlot
 
 run_button = False
 
-st.set_page_config(page_title="AgriVisor", page_icon=':corn:', layout='wide')
+st.set_page_config(page_title="AgriMensor", page_icon=':corn:', layout='wide')
 
 with st.sidebar:
 #    st.markdown(
