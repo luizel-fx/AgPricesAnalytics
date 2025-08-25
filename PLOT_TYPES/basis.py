@@ -261,12 +261,12 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
     with scdRowCol2:
         st.subheader("Tabela Resumo")
         # Calculate summary statistics for the current year
-        current_year_data = concatedBasis[concatedBasis['year'] == str(currYear)]
-        current_year_stats = current_year_data.groupby('month')['diff'].agg(['min', 'mean', 'max'])
+        current_year_data = concatedBasis[concatedBasis['year'] == currYear]
+        current_year_stats = current_year_data.groupby('month')['basis'].agg(['min', 'mean', 'max'])
 
         # Calculate summary statistics for the historical data
         historical_data = concatedBasis[concatedBasis['year'] == 'Histórico']
-        historical_stats = historical_data.groupby('month')['diff'].agg(['min', 'mean', 'max'])
+        historical_stats = historical_data.groupby('month')['basis'].agg(['min', 'mean', 'max'])
         
         # Combine the dataframes
         summary_table = pd.concat([current_year_stats, historical_stats], axis=1)
