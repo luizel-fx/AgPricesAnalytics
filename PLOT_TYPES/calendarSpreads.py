@@ -71,16 +71,19 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
     
     fig.update_layout(
         title = dict(
-            text = f"Calendar Spread | {asset}{longMonth} - {asset}{shortMonth}"
+            text = f"Calendar Spread | {asset}{longMonth} - {asset}{shortMonth}",
+            size = 30
         ),
         xaxis=dict(
             tickfont=dict(
-                size=20  # Set the desired font size for x-axis ticks
+                size=25,  # Set the desired font size for x-axis ticks
+                color = "#000000" 
             )
         ),
         yaxis=dict(
             tickfont=dict(
-                size=20  # Set the desired font size for y-axis ticks
+                size=25,  # Set the desired font size for y-axis ticks
+                color = "#000000" 
             )
         ),
         legend=dict(

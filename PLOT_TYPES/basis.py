@@ -259,16 +259,37 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
             )
         )
     with scdRowCol2:
-        # Step 1: Remove outliers from 'spot_logreturns'
-        concatedBasis_no_outliers = remove_outliers_iqr(concatedBasis, 'spot_logreturns')
-        # Step 2: Remove outliers from 'fut_logreturns' on the new, already-filtered dataframe
-        concatedBasis_no_outliers = remove_outliers_iqr(concatedBasis_no_outliers, 'fut_logreturns')
+        st.subheader("Tabela Resumo")
+        # Calculate summary statistics for the current year
+        current_year_data = concatedBasis[concatedBasis['year'] == str(currYear)]
+        current_year_stats = current_year_data.groupby('month')['diff'].agg(['min', 'mean', 'max'])
+
+        # Calculate summary statistics for the historical data
+        historical_data = concatedBasis[concatedBasis['year'] == 'Histórico']
+        historical_stats = historical_data.groupby('month')['diff'].agg(['min', 'mean', 'max'])
         
-        st.plotly_chart(
-            px.scatter(
-                concatedBasis_no_outliers,
-                y = 'basis',
-                x = 'close',
-                trendline='ols'
-            )
-        )
+        # Combine the dataframes
+        summary_table = pd.concat([current_year_stats, historical_stats], axis=1)
+        
+        # Define multi-level columns
+        summary_table.columns = pd.MultiIndex.from_product([['Ano Atual', 'Histórico'], ['Mínima', 'Média', 'Máxima']])
+
+        # Rename index to month names in Portuguese
+        month_mapping = {
+            date(currYear, 1, 1): 'Janeiro',
+            date(currYear, 2, 1): 'Fevereiro',
+            date(currYear, 3, 1): 'Março',
+            date(currYear, 4, 1): 'Abril',
+            date(currYear, 5, 1): 'Maio',
+            date(currYear, 6, 1): 'Junho',
+            date(currYear, 7, 1): 'Julho',
+            date(currYear, 8, 1): 'Agosto',
+            date(currYear, 9, 1): 'Setembro',
+            date(currYear, 10, 1): 'Outubro',
+            date(currYear, 11, 1): 'Novembro',
+            date(currYear, 12, 1): 'Dezembro'
+        }
+        summary_table = summary_table.rename(index=month_mapping)
+
+        # Display the summary table
+        st.dataframe(summary_table)
