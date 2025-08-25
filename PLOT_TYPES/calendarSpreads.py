@@ -70,14 +70,17 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
             fig.add_trace(go.Scatter(x=spreadDF['time'], y=spreadDF['spread'], name=f'{longExpYear - i}',line=dict(width=3)))
     
     fig.update_layout(
+        title = dict(
+            text = f"Calendar Spread | {asset}{longMonth} - {asset}{shortMonth}"
+        ),
         xaxis=dict(
             tickfont=dict(
-                size=14  # Set the desired font size for x-axis ticks
+                size=20  # Set the desired font size for x-axis ticks
             )
         ),
         yaxis=dict(
             tickfont=dict(
-                size=12  # Set the desired font size for y-axis ticks
+                size=20  # Set the desired font size for y-axis ticks
             )
         ),
         legend=dict(
@@ -87,5 +90,5 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
         xanchor="right",
         x=1
     ))
-    
+
     st.plotly_chart(fig, theme = 'streamlit')
