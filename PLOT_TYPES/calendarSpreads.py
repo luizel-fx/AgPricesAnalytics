@@ -69,10 +69,11 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
         fstDate = max(longContractData['time'].min(), shortContractData['time'].min())
         lstDate = min(longContractData['time'].max(), shortContractData['time'].max())
 
+        longContractData = longContractData.add_suffix(f"{longMonth}")
+        shortContractData = shortContractData.add_suffix(f"{shortMonth}")
         spreadDF = longContractData[(longContractData['time'] >= fstDate) & (longContractData['time'] <= lstDate)][['time', 'close', 'log_returns', 'var']].merge(
             shortContractData[(shortContractData['time'] >= fstDate) & (shortContractData['time'] <= lstDate)][['time', 'close', 'log_returns', 'var']], 
-            how='inner', on='time', suffixes=(longMonth, shortMonth)
-        )
+            how='inner', on='time')
 
         spreadDF['rolling_corr'] = spreadDF[f'log_returns{longMonth}'].rolling(90).corr(spreadDF[f'log_returns{shortMonth}'])
         spreadDF['spreadVar'] = (
