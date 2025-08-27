@@ -72,38 +72,38 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
         # renomear somente as colunas de interesse
         longContractData = longContractData.rename(
             columns={
-                "close": f"close{longMonth}",
-                "log_returns": f"log_returns{longMonth}",
-                "var": f"var{longMonth}"
+                "close": f"close{longMonth}{longExpYear}",
+                "log_returns": f"log_returns{longMonth}{longExpYear}",
+                "var": f"var{longMonth}{longExpYear}"
             }
         )
 
         shortContractData = shortContractData.rename(
             columns={
-                "close": f"close{shortMonth}",
-                "log_returns": f"log_returns{shortMonth}",
-                "var": f"var{shortMonth}"
+                "close": f"close{shortMonth}{shortExpYear}",
+                "log_returns": f"log_returns{shortMonth}{shortExpYear}",
+                "var": f"var{shortMonth}{shortExpYear}"
             }
         )
 
         spreadDF = pd.merge(
-            longContractData[['time', f'close{longMonth}', f'log_returns{longMonth}', f'var{longMonth}']],
-            shortContractData[['time', f'close{shortMonth}', f'log_returns{shortMonth}', f'var{shortMonth}']],
+            longContractData[['time', f'close{longMonth}{longExpYear}', f'log_returns{longMonth}{longExpYear}', f'var{longMonth}{longExpYear}']],
+            shortContractData[['time', f'close{shortMonth}{shortExpYear}', f'log_returns{shortMonth}{shortExpYear}', f'var{shortMonth}{shortExpYear}']],
             on="time",
             how="inner"
         )
 
         # cálculo de correlação rolling
         spreadDF['rolling_corr'] = (
-            spreadDF[f'log_returns{longMonth}']
+            spreadDF[f'log_returns{longMonth}{longExpYear}']
             .rolling(90)
-            .corr(spreadDF[f'log_returns{shortMonth}'])
+            .corr(spreadDF[f'log_returns{shortMonth}{shortExpYear}'])
         )
 
         # variância do spread
         spreadDF['spreadVar'] = (
-            spreadDF[f'var{longMonth}'] + spreadDF[f'var{shortMonth}'] 
-            - 2 * np.sqrt(spreadDF[f'var{longMonth}']) * spreadDF['rolling_corr'] * np.sqrt(spreadDF[f'var{shortMonth}'])
+            spreadDF[f'var{longMonth}{longExpYear}'] + spreadDF[f'var{shortMonth}{shortExpYear}'] 
+            - 2 * np.sqrt(spreadDF[f'var{longMonth}{longExpYear}']) * spreadDF['rolling_corr'] * np.sqrt(spreadDF[f'var{shortMonth}{shortExpYear}'])
         )
         spreadDF['vol'] = np.sqrt(spreadDF['spreadVar'])
 
