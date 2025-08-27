@@ -3,7 +3,9 @@ import numpy as np
 from price_loaders.tradingview import load_asset_price
 import streamlit as st
 from datetime import date
+from plotly.subplots import make_subplots
 
+import plotly.colors as pc
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -33,65 +35,140 @@ def calendarSpreadSidebar():
 
         return asset, longMonth, longExpYear, shortMonth, shortExpYear, lookback
 
+import scipy.stats as stt
+
 def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, lookback):
-    fig = go.Figure()
+    mainPlot = make_subplots(
+        rows=2,
+        shared_xaxes=True,
+        vertical_spacing=0,
+        row_heights=[0.7, 0.3]
+    )
+
+    colors = pc.qualitative.D3
+    volatilityModelDF = concatedSpread = pd.DataFrame()
+    last_vol = None  # <- vamos armazenar a vol mais recente do i=0
+    last_spread = None
 
     for i in range(0, lookback+1):
         longContract = asset + longMonth + str(longExpYear - i)
         shortContract = asset + shortMonth + str(shortExpYear - i)
 
-        longContractData = load_asset_price(longContract, 10000, 'D')       # Gets data from TradingView
-        shortContractData = load_asset_price(shortContract, 10000, 'D')     # Gets data from TradingView
+        longContractData = load_asset_price(longContract, 10000, 'D')
+        shortContractData = load_asset_price(shortContract, 10000, 'D')
 
-        # Converting the columns to datetime
         longContractData['time'] = pd.to_datetime(longContractData['time'])
         shortContractData['time'] = pd.to_datetime(shortContractData['time'])
 
-        # These two variables are used to filter the data only when both contracts were open.  
+        longContractData['log_returns'] = np.log(longContractData['close']).diff()
+        longContractData['var'] = longContractData['log_returns'].rolling(252).var()
+
+        shortContractData['log_returns'] = np.log(shortContractData['close']).diff()
+        shortContractData['var'] = shortContractData['log_returns'].rolling(252).var()
+
         fstDate = max(longContractData['time'].min(), shortContractData['time'].min())
         lstDate = min(longContractData['time'].max(), shortContractData['time'].max())
 
-        spreadDF = longContractData[(longContractData['time'] >= fstDate) & (longContractData['time'] <= lstDate)][['time', 'close']].merge(
-            shortContractData[(shortContractData['time'] >= fstDate) & (shortContractData['time'] <= lstDate)][['time', 'close']], how='inner', on='time', suffixes=(longMonth, shortMonth)
+        spreadDF = longContractData[(longContractData['time'] >= fstDate) & (longContractData['time'] <= lstDate)][['time', 'close', 'log_returns', 'var']].merge(
+            shortContractData[(shortContractData['time'] >= fstDate) & (shortContractData['time'] <= lstDate)][['time', 'close', 'log_returns', 'var']], 
+            how='inner', on='time', suffixes=(longMonth, shortMonth)
         )
 
-        spreadDF['time'] = spreadDF['time'].apply(lambda x: pd.Timestamp(date(x.year, x.month, x.day)))
-        # Time adjustment. To have an adequate plot, we'll have to have all the data in the same year, keeping the month and the day the same.
+        spreadDF['rolling_corr'] = spreadDF[f'log_returns{longMonth}'].rolling(252).corr(spreadDF[f'log_returns{shortMonth}'])
+        spreadDF['spreadVar'] = (
+            spreadDF[f'var{longMonth}'] + spreadDF[f'var{shortMonth}'] 
+            - 2*np.sqrt(spreadDF[f'var{longMonth}'])*spreadDF['rolling_corr']*np.sqrt(spreadDF[f'var{shortMonth}'])
+        )
+        spreadDF['vol'] = np.sqrt(spreadDF['spreadVar'])
 
-        try: spreadDF = spreadDF[~((spreadDF['time'].dt.month == 2) & (spreadDF['time'].dt.day == 29))] # # Dropping the 29-Feb of the leap year.
-        except: pass
+        n_lags = 22
+        volDF = pd.concat([
+            spreadDF['vol'].shift(1) for i in range(n_lags + 1)
+        ], axis=1)
+
+        volDF.columns = [f"t-{i}" if i > 0 else "t" for i in range(n_lags + 1)]
+        volDF = volDF.dropna()
+
+        volatilityModelDF = pd.concat([volatilityModelDF, volDF])
+        spreadDF['time'] = spreadDF['time'].apply(lambda x: pd.Timestamp(date(x.year, x.month, x.day)))
+
+        try:
+            spreadDF = spreadDF[~((spreadDF['time'].dt.month == 2) & (spreadDF['time'].dt.day == 29))]
+        except:
+            pass
 
         spreadDF['spread'] = spreadDF[f'close{longMonth}'] - spreadDF[f'close{shortMonth}']
         spreadDF['time'] = spreadDF['time'].apply(lambda x: pd.Timestamp(date(x.year + i, x.month, x.day)))
 
-        if i != 0:
-            fig.add_trace(go.Scatter(x=spreadDF['time'], y=spreadDF['spread'], name=f'{longExpYear - i}',line=dict(width=1)))
-        else: 
-            fig.add_trace(go.Scatter(x=spreadDF['time'], y=spreadDF['spread'], name=f'{longExpYear - i}',line=dict(width=3)))
-    
-    fig.update_layout(
-        title = dict(
-            text = f"Calendar Spread | {asset}{longMonth} - {asset}{shortMonth}",
-            size = 30
-        ),
-        xaxis=dict(
-            tickfont=dict(
-                size=25,  # Set the desired font size for x-axis ticks
-                color = "#000000" 
-            )
-        ),
-        yaxis=dict(
-            tickfont=dict(
-                size=25,  # Set the desired font size for y-axis ticks
-                color = "#000000" 
-            )
-        ),
-        legend=dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.02,
-        xanchor="right",
-        x=1
-    ))
+        color = colors[i % len(colors)]
+        width = 5 if i == 0 else 2
+        spreadDF['pairFlag'] = legend_name = f'{longMonth}{longExpYear-i} - {shortMonth}{shortExpYear-i}'
 
-    st.plotly_chart(fig, theme = 'streamlit')
+        # Linha de spread
+        mainPlot.add_trace(
+            go.Scatter(x=spreadDF['time'], y=spreadDF['spread'], 
+                       name=legend_name, line=dict(width=width, color=color)),
+            row=1, col=1
+        )
+
+        # Linha de vol
+        mainPlot.add_trace(
+            go.Scatter(x=spreadDF['time'], y=spreadDF['vol'], 
+                       name=legend_name, line=dict(width=width, color=color), 
+                       showlegend=False),
+            row=2, col=1
+        )
+
+        concatedSpread = pd.concat([concatedSpread, spreadDF])
+
+        # --- Guardar a última vol e spread apenas quando i==0 ---
+        if i == 0:
+            last_vol = spreadDF['vol'].iloc[-1]
+            last_spread = spreadDF['spread'].iloc[-1]
+
+    # Layout do gráfico
+    mainPlot.update_layout(
+        title=dict(
+            text=f"Calendar Spread | {asset}{longMonth} - {asset}{shortMonth}",
+            font=dict(size=30)
+        ),
+        xaxis2=dict(tickfont=dict(size=15, color="#000000")),
+        yaxis=dict(tickfont=dict(size=15, color="#000000")),
+        yaxis2=dict(tickfont=dict(size=15, color="#000000")),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+
+    # --- Cálculo do VaR ---
+    from scipy.stats import norm
+    # Exibir no Streamlit
+    fstRowCol1, fstRowCol2 = st.columns([3,1])
+    with fstRowCol1: 
+        st.plotly_chart(mainPlot, theme='streamlit')
+    with fstRowCol2:
+        stats, view = st.tabs(['Estatísticas', 'Visualização'])
+                # Nível de confiança
+        alpha = 0.05   # 5% -> 95% confiança
+
+        # Última volatilidade (quando i = 0)
+        #last_vol = spreadDF['vol'].iloc[-1]
+
+        # Quantil normal
+        z_alpha = norm.ppf(alpha)
+
+        # VaR paramétrico (1 dia, assumindo média zero)
+        VaR = -z_alpha * last_vol
+
+        # CVaR (Expected Shortfall)
+        CVaR = last_vol * norm.pdf(z_alpha) / alpha
+
+        with stats:
+            st.metric(f"Volatilidade", f"{last_vol:.2%}")
+            st.metric(f"VaR (95%)", f"{VaR:.2%}")
+            st.metric(f"CVaR (95%)", f"{CVaR:.2%}")
+
