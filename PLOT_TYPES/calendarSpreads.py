@@ -124,7 +124,7 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
         except:
             pass
 
-        spreadDF['spread'] = spreadDF[f'close{longMonth}'] - spreadDF[f'close{shortMonth}']
+        spreadDF['spread'] = spreadDF[f'close{longMonth}{longExpYear}'] - spreadDF[f'close{shortMonth}{shortExpYear}']
         spreadDF['time'] = spreadDF['time'].apply(lambda x: pd.Timestamp(date(x.year + i, x.month, x.day)))
 
         color = colors[i % len(colors)]
