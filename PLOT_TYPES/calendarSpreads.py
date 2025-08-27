@@ -61,10 +61,10 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
         shortContractData['time'] = pd.to_datetime(shortContractData['time'])
 
         longContractData['log_returns'] = np.log(longContractData['close']).diff()
-        longContractData['var'] = longContractData['log_returns'].rolling(252).var()
+        longContractData['var'] = longContractData['log_returns'].rolling(90).var()
 
         shortContractData['log_returns'] = np.log(shortContractData['close']).diff()
-        shortContractData['var'] = shortContractData['log_returns'].rolling(252).var()
+        shortContractData['var'] = shortContractData['log_returns'].rolling(90).var()
 
         fstDate = max(longContractData['time'].min(), shortContractData['time'].min())
         lstDate = min(longContractData['time'].max(), shortContractData['time'].max())
@@ -74,7 +74,7 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
             how='inner', on='time', suffixes=(longMonth, shortMonth)
         )
 
-        spreadDF['rolling_corr'] = spreadDF[f'log_returns{longMonth}'].rolling(252).corr(spreadDF[f'log_returns{shortMonth}'])
+        spreadDF['rolling_corr'] = spreadDF[f'log_returns{longMonth}'].rolling(90).corr(spreadDF[f'log_returns{shortMonth}'])
         spreadDF['spreadVar'] = (
             spreadDF[f'var{longMonth}'] + spreadDF[f'var{shortMonth}'] 
             - 2*np.sqrt(spreadDF[f'var{longMonth}'])*spreadDF['rolling_corr']*np.sqrt(spreadDF[f'var{shortMonth}'])
