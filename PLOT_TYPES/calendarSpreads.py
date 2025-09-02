@@ -195,7 +195,8 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
         CVaR = last_vol * norm.pdf(z_alpha) / alpha
 
         with stats:
-            st.metric(f"Volatilidade", f"{last_vol:.2%}")
+            st.metric(f"Volatilidade anual", f"{last_vol*np.sqrt(252):.2%}")
+            st.metric(f"Volatilidade diária", f"{last_vol:.2%}")
             st.metric(f"VaR (95%)", f"{VaR:.2%}")
             st.metric(f"CVaR (95%)", f"{CVaR:.2%}")
 

@@ -26,12 +26,12 @@ with st.sidebar:
     plotType = st.selectbox(
         "Plot type",
         [
-            "Basis",
-            "Diferencial de Base",
-            "Calendar Spreads",
-            "Ratios",
-            "Preço relativo",
-            "Sazonalidade"
+              "Basis"
+            , "Diferencial de Base"
+            , "Calendar Spreads"
+            #, "Ratios"
+            #, "Preço relativo"
+            #, "Sazonalidade"
         ],
         index = None
     )
@@ -79,8 +79,11 @@ elif run_button == False:
     """
     # Bem vindo!
 
-    AgriVisor é um projeto, ainda em desenvolvimento, de uma plataforma online, simples e intuitiva para análise de preços das principais commodities agrícolas.
+    AgriMensor é uma plataforma, ainda em desenvolvimento, para a análise de preços agrícolas, tanto do mercado físico quanto de bolsa.
 
-    Até o momento, a plataforma permite analisar diferenciais de base, basis de soja e milho, e Calendar Spreads dos contratos de milho e boi gordo na B3, e soja em CBOT, a qual é operada na B3 através de contratos espelho.
+    Até o momento, conta com funcionalidades para análise de basis, diferenciais de base e calendar spreads. Cada página é confeccionada pensando em melhor fundamentar as decisões, auxiliando na elaboração de estratégias para hedge e especulação, permitindo análises sazonais livres de outliers, distribuições comparando o comportamento dos preços em determinado mês em relação ao ano.
+    
+    Uma feature que será implementada, devido a falta de um contrato de soja na B3, é o comparativo dos preços físicos com vencimento específicos na bolsa de Chicago utilizando a devida cotação do dólar na curva.
+    Para os calendar spreads, já calcula-se automaticamente a volatilidade diária e as métricas de risco VaR e cVar.
 """
 )
