@@ -61,10 +61,10 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
         shortContractData['time'] = pd.to_datetime(shortContractData['time'])
 
         longContractData['log_returns'] = np.log(longContractData['close']).diff()
-        longContractData['var'] = longContractData['log_returns'].rolling(90).var()
+        longContractData['var'] = longContractData['log_returns'].rolling(30).var()
 
         shortContractData['log_returns'] = np.log(shortContractData['close']).diff()
-        shortContractData['var'] = shortContractData['log_returns'].rolling(90).var()
+        shortContractData['var'] = shortContractData['log_returns'].rolling(30).var()
 
         fstDate = max(longContractData['time'].min(), shortContractData['time'].min())
         lstDate = min(longContractData['time'].max(), shortContractData['time'].max())
@@ -96,7 +96,7 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
         # cálculo de correlação rolling
         spreadDF['rolling_corr'] = (
             spreadDF[f'log_returns{longMonth}{longExpYear}']
-            .rolling(90)
+            .rolling(30)
             .corr(spreadDF[f'log_returns{shortMonth}{shortExpYear}'])
         )
 
@@ -195,8 +195,19 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
         CVaR = last_vol * norm.pdf(z_alpha) / alpha
 
         with stats:
-            st.metric(f"Volatilidade anual", f"{last_vol*np.sqrt(252):.2%}")
+            st.metric(f"Volatilidade anualizada", f"{last_vol*np.sqrt(252):.2%}")
             st.metric(f"Volatilidade diária", f"{last_vol:.2%}")
-            st.metric(f"VaR (95%)", f"{VaR:.2%}")
-            st.metric(f"CVaR (95%)", f"{CVaR:.2%}")
+            statsRow1Col1, statsRow1Col2 = st.columns(2)
+
+            if asset == "CCM" or asset == "BGI":
+                currency = "R$/sc"
+            else: 
+                currency = "¢/bu"
+            with statsRow1Col1: st.metric(f"VaR (95%)", f"{VaR:.2%}")
+            with statsRow1Col2: st.metric(f"VaR ({currency})", f"{VaR*last_spread:.2}")
+            
+            statsRow2Col1, statsRow2Col2 = st.columns(2)
+
+            with statsRow2Col1: st.metric(f"cVaR (95%)", f"{CVaR:.2%}")
+            with statsRow2Col2: st.metric(f"cVaR ({currency})", f"{CVaR*last_spread:.2}")
 

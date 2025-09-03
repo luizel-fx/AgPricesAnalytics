@@ -22,14 +22,11 @@ def remove_outliers_iqr(df, column):
 
 def basisSidebar(commodity):
     with st.sidebar:
-        base = ''
-        convertFactor=0
-        futName = ''
-        convertUnit = ''
-        convertFactor = ""
-        expMonth = ""
-        expYear = ""
-        lookback=0
+        # To prevent errors, all the used variabels are already selected
+        base = futName = convertUnit = convertFactor = expMonth = expYear = lookback  = None
+        expMonth = '1!'
+
+        # Each commodity has it's own particularities, so, each one is treated individualy
         if commodity == "Milho":
             bases = pd.read_excel("DATA/milho.xlsx", sheet_name="PRAÇAS")['Descrição']
             base = st.selectbox(
@@ -37,7 +34,7 @@ def basisSidebar(commodity):
                 bases
             )
 
-            col1, col2 = st.columns(2)
+            col1, col2 = st.columns([2,1])
 
             with col1:
                 futures = st.selectbox(
@@ -117,8 +114,9 @@ def basisSidebar(commodity):
     return base, futName, convertUnit, expMonth, expYear, convertFactor, lookback
 
 def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertFactor, lookback):
-    stacked_TS = go.Figure()
+    stacked_TS = go.Figure() # Plotly figure initialization
 
+    # Conditionals for data paths
     if commodity == "Milho":
         path = "DATA/milho.xlsx"
         bases = pd.read_excel(path, sheet_name="PRAÇAS")
@@ -129,6 +127,7 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
         path = "DATA/boi.xlsx"
         bases = pd.read_excel(path, sheet_name="PRAÇAS")
     
+    # Loading the spot prices data:
     baseCode = bases[bases['Descrição'] == base]['Praças'].values[0]
     del bases
 
@@ -148,12 +147,17 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
         spotPrices['FEC'] = ((spotPrices['FEC']/spotPrices['USD'])/convertFactor)*100
 
         spotPrices.dropna()
+            # In case of a CBOT expire month is specified, it will use the dolar yield curve.
 
     # Initialize concatedBasis here before the loop
     concatedBasis = pd.DataFrame() 
 
     for i in range(0,lookback+1):
         if expMonth == "1!":
+            # ============================== #
+            # = Futures exchange data load = #
+            # ============================== #
+
             futuresPrices = load_asset_price(f'{futName}{expMonth}', 10000, 'D')
             futuresPrices['DRF'] = futuresPrices['time'].dt.tz_convert("America/Sao_Paulo").apply(lambda x: pd.Timestamp(x.year, x.month, x.day))
             basis = spotPrices.merge(futuresPrices, on = 'DRF', how = 'left')[['DRF', 'FEC', 'close']].ffill()
@@ -201,6 +205,15 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
 
             # Now, concatenate yearlySelection to concatedBasis regardless of the loop index
             concatedBasis = pd.concat([concatedBasis, yearlySelection], ignore_index=True)
+
+
+    st.markdown(
+        f"""
+        # BASIS | {commodity.upper()} | {base} - {futName}{expMonth}
+        """
+    )
+
+
     stacked_TS.update_layout(
         legend=dict(
             orientation="h",
@@ -211,12 +224,6 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
         )
     )
 
-    st.markdown(
-        f"""
-        ### BASIS | {commodity.upper()}
-        #### {base} - {futName}{expMonth}
-        """
-    )
 
     concatedBasis['month'] = [date(datetime.now().year, m, 1) for m in concatedBasis['DRF'].dt.month]
 
@@ -226,16 +233,12 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
     # Drop all rows that contain any NaN values
     df_cleaned = df_cleaned.dropna()
 
-    fstRowcol1, fstRowcol2 = st.columns([2,1])
-
-    with fstRowcol1: st.plotly_chart(stacked_TS, theme = 'streamlit')
-    with fstRowcol2:
-        disPlot = ff.create_distplot(
-            [df_cleaned['basis'], df_cleaned[df_cleaned['month'] == date(datetime.now().year, max(df_cleaned['DRF'].dt.month), 1)]['basis']],
-            group_labels=["Ano interno", "Mês atual"],
-            show_rug=False,
-            show_hist=False)
-        disPlot.update_layout(
+    disPlot = ff.create_distplot(
+        [df_cleaned['basis'], df_cleaned[df_cleaned['month'] == date(datetime.now().year, max(df_cleaned['DRF'].dt.month), 1)]['basis']],
+        group_labels=["Ano interno", "Mês atual"],
+        show_rug=False,
+        show_hist=False)
+    disPlot.update_layout(
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -244,10 +247,14 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
             x=0.01
         )
     )
-        st.plotly_chart(disPlot)
+
+    fstRowcol1, fstRowcol2 = st.columns([2,1])
+
+    with fstRowcol1: st.plotly_chart(stacked_TS, theme = 'streamlit')
+    with fstRowcol2: st.plotly_chart(disPlot)
 
 
-    scdRowCol1,scdRowCol2, = st.columns([3,2])
+    scdRowCol1,scdRowCol2, = st.columns([2,1])
 
     with scdRowCol1:
         st.plotly_chart(
