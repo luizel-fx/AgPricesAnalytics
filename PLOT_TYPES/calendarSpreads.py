@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from price_loaders.tradingview import load_asset_price
 import streamlit as st
-from datetime import date
+from datetime import date, datetime
 from plotly.subplots import make_subplots
 
 import plotly.colors as pc
@@ -36,6 +36,20 @@ def calendarSpreadSidebar():
         return asset, longMonth, longExpYear, shortMonth, shortExpYear, lookback
 
 import scipy.stats as stt
+
+def seazonalPlot(anchorDate, rawDF):
+    rawDFPivoted = pd.pivot_table(rawDF[rawDF['time'] >= pd.to_datetime(anchorDate)], index = 'time', columns='pairFlag', values='spread', aggfunc='mean')
+    #concatedSpreadPivotedCum_returns = concatedSpreadPivoted / concatedSpreadPivoted.iloc[anchorDate, :]
+    
+    cols = rawDFPivoted.columns
+    rawDFPivoted[cols[:-1]] = rawDFPivoted[cols[:-1]].bfill().ffill()
+    rawDFPivoted[cols[-1]] = rawDFPivoted[cols[-1]].bfill()
+
+    rawDFPivotedCummDiff =  rawDFPivoted.copy()
+    rawDFPivotedCummDiff = (
+        (rawDFPivotedCummDiff - rawDFPivotedCummDiff.iloc[0]) 
+        )
+    st.line_chart(rawDFPivotedCummDiff)
 
 def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, lookback):
     mainPlot = make_subplots(
@@ -176,7 +190,13 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
     # Exibir no Streamlit
     fstRowCol1, fstRowCol2 = st.columns([3,1])
     with fstRowCol1: 
-        st.plotly_chart(mainPlot, theme='streamlit')
+        fstRowCol1Tab1, fstRowCol1Tab2 = st.tabs(["Empilhado", "Sazonalidade"])
+        with fstRowCol1Tab1: st.plotly_chart(mainPlot, theme='streamlit')
+        with fstRowCol1Tab2:
+            anchorDate = st.date_input("Data inicial",value=date(day = 20, month = 8, year = 2025), format="DD/MM/YYYY")    
+
+            seazonalPlot(anchorDate, concatedSpread)
+            
     with fstRowCol2:
         stats, view = st.tabs(['Estatísticas', 'Visualização'])
                 # Nível de confiança
