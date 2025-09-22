@@ -74,16 +74,16 @@ elif run_button and plotType == "Diferencial de Base":
     basisDiffPlot(commodity, fstBase, scdBase, lookback)
 elif run_button and plotType == "Calendar Spreads":
     calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, lookback)
-elif run_button == False:
-    st.markdown(
-    """
-    # Bem vindo!
+#elif run_button == False:
+    #st.markdown(
+    #"""
+    ## Bem vindo!
 
-    AgriMensor é uma plataforma, ainda em desenvolvimento, para a análise de preços agrícolas, tanto do mercado físico quanto de bolsa.
+    #AgriMensor é uma plataforma, ainda em desenvolvimento, para a análise de preços agrícolas, tanto do mercado físico quanto de bolsa.
 
-    Até o momento, conta com funcionalidades para análise de basis, diferenciais de base e calendar spreads. Cada página é confeccionada pensando em melhor fundamentar as decisões, auxiliando na elaboração de estratégias para hedge e especulação, permitindo análises sazonais livres de outliers, distribuições comparando o comportamento dos preços em determinado mês em relação ao ano.
+    #Até o momento, conta com funcionalidades para análise de basis, diferenciais de base e calendar spreads. Cada página é confeccionada pensando em melhor fundamentar as decisões, auxiliando na elaboração de estratégias para hedge e especulação, permitindo análises sazonais livres de outliers, distribuições comparando o comportamento dos preços em determinado mês em relação ao ano.
     
-    Uma feature que será implementada, devido a falta de um contrato de soja na B3, é o comparativo dos preços físicos com vencimento específicos na bolsa de Chicago utilizando a devida cotação do dólar na curva.
-    Para os calendar spreads, já calcula-se automaticamente a volatilidade diária e as métricas de risco VaR e cVar.
-"""
-)
+    #Uma feature que será implementada, devido a falta de um contrato de soja na B3, é o comparativo dos preços físicos com vencimento específicos na bolsa de Chicago utilizando a devida cotação do dólar na curva.
+    #Para os calendar spreads, calcula-se automaticamente a volatilidade diária e as métricas de risco VaR e cVar.
+#"""
+#)

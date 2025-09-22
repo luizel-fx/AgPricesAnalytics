@@ -49,14 +49,14 @@ def basisSidebar(commodity):
                     futName = "ZC"
                     convertUnit = True
                     convertFactor = 2.2362074
-                expMonth = st.text_input("Mês de vencimento", placeholder="1! para série contínua")
+                expMonth = '1!'
+                #expMonth = st.text_input("Mês de vencimento", placeholder="1! para série contínua")
                 
                 if expMonth != "1!":
                     expYear = st.text_input("Ano de vencimento")
                 else:
                     expYear = None
-
-            lookback = st.number_input("Lookback", step = 1)
+                lookback = st.number_input("Lookback", step = 1)
         elif commodity=="Soja":
 
             bases = pd.read_excel("DATA/soja.xlsx", sheet_name="PRAÇAS")['Descrição']
@@ -77,14 +77,15 @@ def basisSidebar(commodity):
                 futName = "ZS"
                 convertUnit = True
                 convertFactor = 2.2046226
-                expMonth = st.text_input("Mês de vencimento", placeholder="1! para série contínua")
+                expMonth = "1!"
+                lookback = st.number_input("Lookback", step = 1)
+                #expMonth = st.text_input("Mês de vencimento", placeholder="1! para série contínua")
                 
-                if expMonth != "1!":
-                    expYear = st.number_input("Ano de vencimento", step = 1)
-                else:
-                    expYear = None
-            lookback = st.number_input("Lookback", step = 1)
-
+                #if expMonth != "1!":
+                #    expYear = st.number_input("Ano de vencimento", step = 1)
+                #else:
+                #    expYear = None
+            
         elif commodity=="Boi Gordo":
             bases = pd.read_excel("DATA/boi.xlsx", sheet_name="PRAÇAS")['Descrição']
             base = st.selectbox(
@@ -102,14 +103,15 @@ def basisSidebar(commodity):
             with col2:
                 futName = "BGI"
                 convertUnit = False
-                expMonth = st.text_input("Mês de vencimento", placeholder="1! para série contínua")
+                expMonth = '1!'
+                #expMonth = st.text_input("Mês de vencimento", placeholder="1! para série contínua")
                 
                 if expMonth != "1!":
                     expYear = st.number_input("Ano de vencimento", step = 1)
                 else:
                     expYear = None
-
-            lookback = st.number_input("Lookback", step = 1)
+                lookback = st.number_input("Lookback", step = 1)
+            
 
     return base, futName, convertUnit, expMonth, expYear, convertFactor, lookback
 
@@ -140,7 +142,7 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
     if convertUnit:
         dol = pd.read_excel('DATA/dolar.xlsx', sheet_name='dol', skiprows=[0,1], header=None)
         dol.columns=["DRF", "R$", "US$", "USD"]
-
+    
         dol['DRF'] = dol['DRF'].apply(lambda x: pd.Timestamp(x.year, x.month, x.day))
 
         spotPrices = spotPrices.merge(dol, how = 'left', on='DRF')
@@ -159,7 +161,7 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
             # ============================== #
 
             futuresPrices = load_asset_price(f'{futName}{expMonth}', 10000, 'D')
-            futuresPrices['DRF'] = futuresPrices['time'].dt.tz_convert("America/Sao_Paulo").apply(lambda x: pd.Timestamp(x.year, x.month, x.day))
+            futuresPrices['DRF'] = futuresPrices['time'].apply(lambda x: pd.Timestamp(x.year, x.month, x.day))
             basis = spotPrices.merge(futuresPrices, on = 'DRF', how = 'left')[['DRF', 'FEC', 'close']].ffill()
             basis['basis'] = basis['FEC'] - basis['close']
 
@@ -182,8 +184,9 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
 
         else: 
             futuresPrices = load_asset_price(f'{futName}{expMonth}{int(expYear) - i}', 10000,'D')
-            dol['DRF'] = dol['time'].dt.tz_convert("America/Sao_Paulo").apply(lambda x: pd.Timestamp(x.year, x.month, x.day))
-            futuresPrices['DRF'] = futuresPrices['time'].dt.tz_convert("America/Sao_Paulo").apply(lambda x: pd.Timestamp(x.year, x.month, x.day))
+            #dol['DRF'] = dol['time'].dt.tz_convert("America/Sao_Paulo").apply(lambda x: pd.Timestamp(x.year, x.month, x.day))
+
+            futuresPrices['DRF'] = futuresPrices['time'].apply(lambda x: pd.Timestamp(x.year, x.month, x.day))
             basis = futuresPrices.merge(
                 spotPrices,
                 on = 'DRF',
@@ -200,8 +203,10 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
 
             if i != 0:
                 stacked_TS.add_trace(go.Scatter(x=yearlySelection['DRF'], y=yearlySelection['basis'], name=f'{currYear - i}',line=dict(width=3)))
+                yearlySelection['year'] = 'Histórico'
             else: 
                 stacked_TS.add_trace(go.Scatter(x=yearlySelection['DRF'], y=yearlySelection['basis'], name=f'{currYear - i}',line=dict(width=3)))
+                yearlySelection['year'] = expYear
 
             # Now, concatenate yearlySelection to concatedBasis regardless of the loop index
             concatedBasis = pd.concat([concatedBasis, yearlySelection], ignore_index=True)
@@ -257,14 +262,23 @@ def basisPlot(commodity, base, futName, convertUnit, expMonth, expYear, convertF
     scdRowCol1,scdRowCol2, = st.columns([2,1])
 
     with scdRowCol1:
-        st.plotly_chart(
-            px.box(
+
+        boxPlot = px.box(
                 concatedBasis,
                 y = 'basis',
                 x = 'month',
                 color='year'
             )
+        boxPlot.update_layout(
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0.01
+            )
         )
+        st.plotly_chart(boxPlot)
     with scdRowCol2:
         st.subheader("Tabela Resumo")
         # Calculate summary statistics for the current year

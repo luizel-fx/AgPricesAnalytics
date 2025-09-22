@@ -54,7 +54,7 @@ def seazonalPlot(anchorDate, rawDF):
 def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, lookback):
     mainPlot = make_subplots(
         rows=2,
-        shared_xaxes=True,
+        shared_xaxes=False,
         vertical_spacing=0,
         row_heights=[0.7, 0.3]
     )
@@ -170,10 +170,10 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
     # Layout do gráfico
     mainPlot.update_layout(
         title=dict(
-            text=f"Calendar Spread | {asset}{longMonth} - {asset}{shortMonth}",
+            text=f"Calendar Spread | {asset} | Long {longMonth} x Short {shortMonth}",
             font=dict(size=30)
         ),
-        xaxis2=dict(tickfont=dict(size=15, color="#000000")),
+        xaxis=dict(tickfont=dict(size=15, color="#000000")),
         yaxis=dict(tickfont=dict(size=15, color="#000000")),
         yaxis2=dict(tickfont=dict(size=15, color="#000000")),
         legend=dict(
@@ -187,16 +187,50 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
 
     # --- Cálculo do VaR ---
     from scipy.stats import norm
+
     # Exibir no Streamlit
     fstRowCol1, fstRowCol2 = st.columns([3,1])
     with fstRowCol1: 
         fstRowCol1Tab1, fstRowCol1Tab2 = st.tabs(["Empilhado", "Sazonalidade"])
         with fstRowCol1Tab1: st.plotly_chart(mainPlot, theme='streamlit')
         with fstRowCol1Tab2:
-            anchorDate = st.date_input("Data inicial",value=date(day = 20, month = 8, year = 2025), format="DD/MM/YYYY")    
+            fstRowCol1Tab2_Col1, fstRowCol1Tab2_Col2, fstRowCol1Tab2_Col3 = st.columns([1, 1, 8])
+                
+            # Filtre o DataFrame usando a data do session state
+            rawDFPivoted = pd.pivot_table(
+                concatedSpread[concatedSpread['time'] >= datetime.today()],
+                index='time',
+                columns='pairFlag',
+                values='spread',
+                aggfunc='mean'
+            )
 
-            seazonalPlot(anchorDate, concatedSpread)
+            cols = rawDFPivoted.columns
+            rawDFPivoted[cols[:-1]] = rawDFPivoted[cols[:-1]].bfill().ffill()
+            rawDFPivoted[cols[-1]] = rawDFPivoted[cols[-1]].bfill()
             
+            rawDFPivotedCummDiff = (rawDFPivoted - rawDFPivoted.iloc[0])
+            
+            # Plote o gráfico
+            cummRet = px.line(data_frame=rawDFPivotedCummDiff)
+            cummRet.update_layout(
+                title=dict(
+                    text=f"Calendar Spread | {asset} | Long {longMonth} x Short {shortMonth}",
+                    font=dict(size=30)
+                ),
+                xaxis=dict(tickfont=dict(size=15, color="#000000")),
+                yaxis=dict(tickfont=dict(size=15, color="#000000")),
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                )
+            )
+            st.plotly_chart(cummRet)
+
+
     with fstRowCol2:
         stats, view = st.tabs(['Estatísticas', 'Visualização'])
                 # Nível de confiança
