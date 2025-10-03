@@ -52,12 +52,14 @@ def seazonalPlot(anchorDate, rawDF):
     st.line_chart(rawDFPivotedCummDiff)
 
 def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, lookback):
-    mainPlot = make_subplots(
-        rows=2,
-        shared_xaxes=False,
-        vertical_spacing=0,
-        row_heights=[0.7, 0.3]
-    )
+    #mainPlot = make_subplots(
+    #    rows=2,
+    #    shared_xaxes=False,
+    #    vertical_spacing=0,
+    #    row_heights=[0.7, 0.3]
+    #)
+
+    mainPlot = go.Figure()
 
     colors = pc.qualitative.D3
     volatilityModelDF = concatedSpread = pd.DataFrame()
@@ -148,17 +150,17 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
         # Linha de spread
         mainPlot.add_trace(
             go.Scatter(x=spreadDF['time'], y=spreadDF['spread'], 
-                       name=legend_name, line=dict(width=width, color=color)),
-            row=1, col=1
+                       name=legend_name, line=dict(width=width, color=color))
+            #row=1, col=1
         )
 
         # Linha de vol
-        mainPlot.add_trace(
-            go.Scatter(x=spreadDF['time'], y=spreadDF['vol'], 
-                       name=legend_name, line=dict(width=width, color=color), 
-                       showlegend=False),
-            row=2, col=1
-        )
+        #mainPlot.add_trace(
+        #    go.Scatter(x=spreadDF['time'], y=spreadDF['vol'], 
+        #               name=legend_name, line=dict(width=width, color=color), 
+        #               showlegend=False),
+        #    row=2, col=1
+        #)
 
         concatedSpread = pd.concat([concatedSpread, spreadDF])
 
@@ -175,7 +177,7 @@ def calendarSpreadPlot(asset, longMonth, longExpYear, shortMonth, shortExpYear, 
         ),
         xaxis=dict(tickfont=dict(size=15, color="#000000")),
         yaxis=dict(tickfont=dict(size=15, color="#000000")),
-        yaxis2=dict(tickfont=dict(size=15, color="#000000")),
+        #yaxis2=dict(tickfont=dict(size=15, color="#000000")),
         legend=dict(
             orientation="h",
             yanchor="bottom",
